@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load static custom_filters %}
+
+{% block title %}SHOP{% endblock title %}
+
+{% block content %}
+    <div class="llist d-flex">
+        <div class="sidebar">
+            <h3>Категории</h3>
+            <ul>
+                <li {% if not category %} class="selected"{% endif %}> 
+                    <a href="{% url 'main:product_list' %}">Все товары</a>
+                </li>
+                {% for c in categories %}
+                    <li {% if category.slug == c.slug %} class="selected"{% endif %}>
+                        <a href="{{ c.get_absolute_url }}"> {{ c.name }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <!-- Filter Form -->
+            {% if category %}
+                <h3>Фильтры</h3>
+                <form method="GET" action="{{ category.get_absolute_url }}" class="filter-form">
+                    <!-- Price Filter -->
+                    <div class="filter-group">
+                        <h4>Цена</h4>
+                        <input type="number" name="price_min" placeholder="Мин" value="{{ request.GET.price_min }}" class="form-control" step="0.01" min="0">
+                        <input type="number" name="price_max" placeholder="Макс" value="{{ request.GET.price_max }}" class="form-control" step="0.01" min="0">
+                    </div>
+
+                    <!-- Product Name Filter (Checkboxes) -->
+                    <div class="filter-group">
+                        <h4>Модели</h4>
+                        {% for product in all_products %}
+                            <div class="form-check">
+                                <input type="checkbox" name="product_name" value="{{ product.name }}" class="form-check-input" id="product_{{ product.id }}"
+                                    {% if product.name in request.GET.product_name|split_query %}checked{% endif %}>
+                                <label class="form-check-label" for="product_{{ product.id }}">{{ product.name }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Specification Filters -->
+                    {% for spec in specifications %}
+                        <div class="filter-group">
+                            <h4>{{ spec.name }}</h4>
+                            {% if spec.data_type == 'boolean' %}
+                                <select name="spec_{{ spec.id }}" class="form-control">
+                                    <option value="">Все</option>
+                                    <option value="true" {% if request.GET|get_item:'spec_'|add:spec.id == 'true' %}selected{% endif %}>Да</option>
+                                    <option value="false" {% if request.GET|get_item:'spec_'|add:spec.id == 'false' %}selected{% endif %}>Нет</option>
+                                </select>
+                            {% else %}
+                                <!-- Text specifications as checkboxes (including RAM/ROM) -->
+                                {% for value in spec_values|get_item:spec.id %}
+                                    <div class="form-check">
+                                        <input type="checkbox" name="spec_{{ spec.id }}" value="{{ value }}" class="form-check-input" id="spec_{{ spec.id }}_{{ forloop.counter }}"
+                                            {% if value in request.GET|split_query:'spec_'|add:spec.id %}checked{% endif %}>
+                                        <label class="form-check-label" for="spec_{{ spec.id }}_{{ forloop.counter }}">{{ value }}{% if spec.name in 'RAM ROM' %} GB{% endif %}</label>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Применить</button>
+                    <a href="{{ category.get_absolute_url }}" class="btn-reset btn-secondary">Сбросить</a>
+                </form>
+            {% endif %}
+        </div>
+        <div class="main">
+            <div class="main-title">
+                {% if category %}{{ category.name }}{% else %}Products{% endif %}
+            </div>
+            <div class="product-list">
+                <div class="items">
+                    {% for product in products %}
+                        <div class="item d-flex">
+                            <a href="{{ product.get_absolute_url }}" class="home-card d-flex flex-column align-items-center text-center">
+                                <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'img/noimage.jpg' %}{% endif %}" class="card-img" alt="">
+                                <h5 class="title-catd">{{ product.name }}</h5>
+                                {% if product.discount %}
+                                    <div class="cart-discount d-flex gap-2">
+                                        <p class="line"> {{ product.price }}</p>
+                                        <p>{{ product.sell_price }}</p>
+                                    </div>
+                                {% else %}
+                                    <p class="price"> {{ product.price }}</p>
+                                {% endif %} 
+                            </a>
+                            <div class="item-description">
+                                <h5>Описание: {{ product.description }}</h5>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    {% if not products %}
+                        <p>Нет продуктов, соответствующих выбранным фильтрам.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div id="pagination" class="pagination-container d-flex justify-content-center w-100">
+                <ul class="pagination">
+                    <li class="{% if not products.has_previous %}disabled{% endif %}">
+                        <a href="{% if products.has_previous %}?page={{ products.previous_page_number }}{% if filter_params %}&{{ filter_params }}{% endif %}{% endif %}">Previous</a>
+                    </li>
+                    {% for page in products.paginator.page_range %}
+                        {% if page >= products.number|add:-2 and page <= products.number|add:2 %}
+                            <li>
+                                <a href="?page={{ page }}{% if filter_params %}&{{ filter_params }}{% endif %}" class="{% if products.number == page %}disabled{% endif %}">{{ page }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="{% if not products.has_next %}disabled{% endif %}">
+                        <a href="{% if products.has_next %}?page={{ products.next_page_number }}{% if filter_params %}&{{ filter_params }}{% endif %}{% endif %}">Next</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .filter-form {
+            margin-top: 20px;
+        }
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        .filter-group h4 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .form-control {
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .btn {
+            margin-right: 10px;
+        }
+        .form-check {
+            margin-bottom: 5px;
+        }
+        .form-check-label {
+            margin-left: 5px;
+        }
+    </style>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const pagination = document.getElementById("pagination");
+
+        if (!pagination) return;
+
+        function checkScroll() {
+            const scrollPosition = window.scrollY + window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+
+            if (scrollPosition >= documentHeight - 150) {
+                pagination.style.opacity = "1";
+                pagination.style.pointerEvents = "auto";
+            } else {
+                pagination.style.opacity = "0";
+                pagination.style.pointerEvents = "none";
+            }
+        }
+
+        pagination.style.opacity = "0";
+        pagination.style.pointerEvents = "none";
+        pagination.style.transition = "opacity 0.4s ease";
+
+        window.addEventListener("scroll", checkScroll);
+        checkScroll();
+
+        // Prevent empty number inputs and checkboxes from being submitted
+        const form = document.querySelector('.filter-form');
+        form.addEventListener('submit', function (event) {
+            const numberInputs = form.querySelectorAll('input[type="number"]');
+            numberInputs.forEach(input => {
+                if (input.value === '') {
+                    input.disabled = true; // Disable empty inputs
+                }
+            });
+
+            const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.checked || !checkbox.value) {
+                    checkbox.disabled = true; // Disable unchecked or empty checkboxes
+                }
+            });
+        });
+    });
+    </script>
+{% endblock content %}

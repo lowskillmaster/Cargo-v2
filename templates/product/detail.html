@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    {{ product.name }}
+{% endblock title%}
+
+{% block content %}
+    <div class="detail-product d-flex gap-5">
+        <div class="detail-img d-flex align-items-center">
+            {% for image in product.images.all %}
+                <img class="detail-image" src="{{ image.image.url }}" alt="" style="display: none;" data-index="{{ forloop.counter0 }}">
+            {% endfor %}
+            <button class="prev-btn">‹</button>
+            <button class="next-btn">›</button>
+        </div>
+        <script>
+            const images = document.querySelectorAll('.detail-image');
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            let currentIndex = 0;
+
+            images[currentIndex].style.display = 'block';
+
+            if (images.length === 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            } else {
+                prevBtn.addEventListener('click', () => {
+                    images[currentIndex].style.display = 'none';
+                    currentIndex = (currentIndex - 1 + images.length) % images.length;
+                    images[currentIndex].style.display = 'block';
+                });
+
+                nextBtn.addEventListener('click', () => {
+                    images[currentIndex].style.display = 'none';
+                    currentIndex = (currentIndex + 1) % images.length;
+                    images[currentIndex].style.display = 'block';
+                });
+            }
+        </script>
+        <div class="detail-description">
+            <h2>{{ product.name }}</h2>
+            <h3>Category: {{ product.category }}</h3>
+            <p>Description: {{ product.description|linebreaks }}</p>
+            {% if product.discount %}
+                <div class="cart-discount d-flex gap-2">
+                    <p class="line">{{ product.price }}</p>
+                    <p>{{ product.sell_price }}</p>
+                </div>
+            {% else %}
+                <p class="price">{{ product.price }}</p>
+            {% endif %}
+            <form action="{% url "cart:cart_add" product.id %}" class="qform" method="post">
+                <div class="cart-form">
+                    {{ cart_product_form }}
+                    {% csrf_token %}
+                </div>
+                <input type="submit" class="add-to-cart-btn" value="Add to cart">
+            </form>
+        </div>
+    </div>
+    <div class="specifications">
+        <h4>Характеристики:</h4>
+        {% if product.specifications.exists %}
+            <table class="table table-bordered">
+                <tbody>
+                    {% for spec in product.specifications.all %}
+                        <tr>
+                            <td>{{ spec.specification.name }}</td>
+                            <td>{{ spec.value }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Характеристики отсутствуют.</p>
+        {% endif %}
+    </div>
+{% endblock content %}

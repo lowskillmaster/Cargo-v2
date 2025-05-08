@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load static url_replace %}
+{% block title %}
+    Поиск: {{ query|escape }}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <!-- Фильтры -->
+        <div class="col-md-3">
+            <h3>Фильтры</h3>
+            <form method="get" class="mb-4">
+                <input type="hidden" name="q" value="{{ query|escape }}">
+
+                <!-- Категория -->
+                <div class="mb-3">
+                    <label class="form-label">Категория</label>
+                    <select name="category" class="form-select">
+                        <option value="">Все категории</option>
+                        {% for category in categories %}
+                            <option value="{{ category.slug }}" {% if category_slug == category.slug %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Цена -->
+                <div class="mb-3">
+                    <label class="form-label">Цена</label>
+                    <div class="row">
+                        <div class="col">
+                            <input type="number" name="min_price" class="form-control" 
+                                   placeholder="От" value="{{ min_price }}" min="0">
+                        </div>
+                        <div class="col">
+                            <input type="number" name="max_price" class="form-control" 
+                                   placeholder="До" value="{{ max_price }}" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Бренд -->
+                <div class="mb-3">
+                    <label class="form-label">Бренд</label>
+                    <select name="brand" class="form-select">
+                        <option value="">Все бренды</option>
+                        {% for b in brands %}
+                            <option value="{{ b.brand }}" {% if brand == b.brand %}selected{% endif %}>
+                                {{ b.brand }} ({{ b.count }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Применить</button>
+            </form>
+        </div>
+
+        <!-- Результаты -->
+        <div class="col-md-9">
+            <h1 class="my-4">Результаты поиска: "{{ query|escape }}"</h1>
+
+            {% if products %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for product in products %}
+                        <div class="col">
+                            <div class="card h-100">
+                                {% if product.images.first %}
+                                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="{% static 'img/noimage.jpg' %}" class="card-img-top" alt="No image">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+                                    </h5>
+                                    <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if product.discount %}
+                                            <div>
+                                                <span class="text-danger fw-bold">{{ product.sell_price }} руб.</span>
+                                                <small class="text-muted text-decoration-line-through">{{ product.price }} руб.</small>
+                                            </div>
+                                        {% else %}
+                                            <span class="fw-bold">{{ product.price }} руб.</span>
+                                        {% endif %}
+                                        <small class="text-muted">{{ product.brand }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Пагинация -->
+                {% if page_obj.has_other_pages %}
+                    <nav class="mt-4">
+                        <ul class="pagination">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% url_replace page=page_obj.previous_page_number %}">&laquo;</a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% url_replace page=num %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% url_replace page=page_obj.next_page_number %}">&raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <p>По вашему запросу ничего не найдено.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
