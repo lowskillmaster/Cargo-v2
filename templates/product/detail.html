@@ -40,8 +40,8 @@
         </script>
         <div class="detail-description">
             <h2>{{ product.name }}</h2>
-            <h3>Category: {{ product.category }}</h3>
-            <p>Description: {{ product.description|linebreaks }}</p>
+            <h3>Категория: {{ product.category }}</h3>
+            <p>Описание: {{ product.description|linebreaks }}</p>
             {% if product.discount %}
                 <div class="cart-discount d-flex gap-2">
                     <p class="line">{{ product.price }}</p>
@@ -55,7 +55,7 @@
                     {{ cart_product_form }}
                     {% csrf_token %}
                 </div>
-                <input type="submit" class="add-to-cart-btn" value="Add to cart">
+                <input type="submit" class="add-to-cart-btn" value="Добавить в избранное">
             </form>
         </div>
     </div>
@@ -75,5 +75,10 @@
         {% else %}
             <p>Характеристики отсутствуют.</p>
         {% endif %}
+    </div>
+    <div class="mt-3">
+        <a href="{% url 'main:add_to_comparison' product.id %}" class="btn btn-outline-primary">
+            <i class="bi bi-table"></i> Добавить в сравнение
+        </a>
     </div>
 {% endblock content %}

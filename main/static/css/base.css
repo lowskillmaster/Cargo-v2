@@ -5,6 +5,7 @@ body {
     padding: 0;
     margin: 0;
     overflow: auto;
+
 }
 
 ul {
@@ -1263,7 +1264,7 @@ z
 
 .filter-group label {
     display: block;
-    font-weight: bold;
+    font-weight: lighter ;
     margin-bottom: 5px;
 }
 
@@ -1396,7 +1397,7 @@ z
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 180px;
+    width: 200px;
     height: 50px;
     border: 1px solid #000000;
     border-radius: 5px;
@@ -1407,7 +1408,7 @@ z
 }
 
 .add-to-cart-btn:hover {
-    border: 1px solid #00000042;
+    border: 1px solid #007bff;
 }
 
 /* --- Основные стили для корзины --- */
@@ -1602,4 +1603,86 @@ z
     background: #f8f9fa;
     padding: 15px;
     border-radius: 5px;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -300px; /* Скрыт по умолчанию */
+    width: 300px;
+    height: 100%;
+    background-color: #fff;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+    transition: right 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.active {
+    right: 0; /* Показать sidebar */
+}
+
+.sidebar-content {
+    padding: 20px;
+}
+
+.sidebar .btn {
+    width: 100%;
+    text-align: center;
+}
+.sidebar-of-category {
+    margin-top: 70px;
+    width: 250px;
+    padding: 20px;
+}
+
+.sidebar-of-category ul li {
+    font-size: 20px;
+    width: 165px;
+    height: 35px;
+    margin-bottom: 5px;
+}
+
+.sidebar-of-category ul li a {
+    margin-left: 15px;
+    width: 165px;
+}
+
+.sidebar-of-category ul {
+    margin-top: 20px;
+}
+.dark-theme {
+    background-color: #222;
+    color: #fff;
+}
+
+.dark-theme .header,
+.dark-theme .sidebar,
+.dark-theme .container {
+    background-color: #333;
+    color: #fff;
+}
+
+.dark-theme .btn-primary {
+
+    background-color: #555;
+    border-color: #555;
+}
+
+.dark-theme .btn-secondary {
+    background-color: #777;
+    border-color: #777;
+}
+
+.header-icon {
+    position: relative;
+}
+.header-icon .badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+}
+.btn-comparison {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }

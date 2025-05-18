@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load static custom_filters %}
+{% block title %}Сравнение товаров{% endblock %}
+
+{% block content %}
+<div class="comparison-page">
+    <h1>Сравнение товаров</h1>
+    {% if comparisons_by_category %}
+        <!-- Кнопка для переключения режима отображения различий -->
+        <div class="mb-3">
+            <a href="?show_differences={% if show_differences %}false{% else %}true{% endif %}" class="btn btn-primary">
+                {% if show_differences %}
+                    Показать все характеристики
+                {% else %}
+                    Показать только различия
+                {% endif %}
+            </a>
+        </div>
+
+        {% for category, comparisons in comparisons_by_category.items %}
+            <h2>{{ category.name }}</h2>
+            {% if comparisons %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Характеристика</th>
+                            {% for comp in comparisons %}
+                                <th>
+                                    {{ comp.product.name }} <a href="{% url 'main:remove_from_comparison' comp.product.id %}" class="btn btn-danger btn-sm mt-2"> <i class="bi bi-trash"></i></a>
+                                    <br>
+                                    
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for diff in differences|get_item:category %}
+                            <tr>
+                                <td>{{ diff.spec.name }}</td>
+                                {% for value in diff.values %}
+                                    <td>{{ value }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>Нет товаров для сравнения в этой категории.</p>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p>Нет товаров для сравнения.</p>
+    {% endif %}
+</div>
+
+<style>
+.comparison-page {
+    margin-top: 20px;
+}
+.table {
+    width: 100%;
+    margin-bottom: 20px;
+}
+.table th, .table td {
+    text-align: center;
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

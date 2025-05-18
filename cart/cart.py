@@ -1,56 +1,59 @@
-from decimal import Decimal
 from django.conf import settings
+from .models import CartItem
 from main.models import Product
 
 class Cart:
+    def __init__(self, request):
+        self.request = request
+        self.session = request.session
+        self.user = request.user if request.user.is_authenticated else None
+        self.session_key = self.session.session_key
+        if not self.session_key:
+            self.session.create()
+            self.session_key = self.session.session_key
 
-	def __init__(self, request):
-		self.session = request.session
-		cart = self.session.get(settings.CART_SESSION_ID)
-		if not cart:
-			cart = self.session[settings.CART_SESSION_ID] = {}
-		self.cart = cart
+    def add(self, product, quantity=1, override_quantity=False):
+        if self.user:
+            cart_item, created = CartItem.objects.get_or_create(
+                user=self.user,
+                product=product,
+                defaults={'quantity': quantity}
+            )
+            if not created:
+                if override_quantity:
+                    cart_item.quantity = quantity
+                else:
+                    cart_item.quantity += quantity
+                cart_item.save()
+        else:
+            cart_item, created = CartItem.objects.get_or_create(
+                session_key=self.session_key,
+                product=product,
+                defaults={'quantity': quantity}
+            )
+            if not created:
+                if override_quantity:
+                    cart_item.quantity = quantity
+                else:
+                    cart_item.quantity += quantity
+                cart_item.save()
 
-	def add(self, product, quantity=1, override_quantity=False):
-		product_id = str(product.id)
-		if product_id not in self.cart:
-			self.cart[product_id] = {
-				'quantity': 0,
-				'price': str(product.price),
-			}
+    def remove(self, product):
+        if self.user:
+            CartItem.objects.filter(user=self.user, product=product).delete()
+        else:
+            CartItem.objects.filter(session_key=self.session_key, product=product).delete()
 
-		if override_quantity:
-			self.cart[product_id]['quantity'] = quantity
-		else:
-			self.cart[product_id]['quantity'] += quantity
+    def get_items(self):
+        if self.user:
+            return CartItem.objects.filter(user=self.user).select_related('product')
+        return CartItem.objects.filter(session_key=self.session_key).select_related('product')
 
-		self.save()
+    def clear(self):
+        if self.user:
+            CartItem.objects.filter(user=self.user).delete()
+        else:
+            CartItem.objects.filter(session_key=self.session_key).delete()
 
-	def save(self):
-		self.session.modified = True
-
-	def remove(self, product):
-		product_id = str(product.id)
-		if product_id in self.cart:
-			del self.cart[product_id]
-			self.save()
-
-	def __iter__(self):
-		product_ids = self.cart.keys()
-		products = Product.objects.filter(id__in=product_ids)
-		cart = self.cart.copy()
-		for product in products:
-			cart[str(product.id)]['product'] = product
-		for item in cart.values():
-			item['price'] = Decimal(item['price'])
-			item['total_price'] = item['price'] * item['quantity']
-			yield item
-
-	def __len__(self):
-		return sum(item['quantity'] for item in self.cart.values())
-
-	def clear(self):
-		del self.session[settings.CART_SESSION_ID]
-	def get_total_price(self):
-		total = sum((Decimal(item['price']) - (Decimal(item['price']) * Decimal(item['product'].discount / 100))) * item['quantity'] for item in self.cart.values())
-		return format(total, '.2f')
+    def __len__(self):
+        return sum(item.quantity for item in self.get_items())

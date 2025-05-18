@@ -160,3 +160,47 @@ class ProductImage(models.Model):
 
 	def __str__(self):
 		return f'{self.product.name} - {self.image.name}'
+
+
+
+class Comparison(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='comparisons'
+    )
+    session_key = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='comparisons'
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE
+    )
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'comparison'
+        verbose_name_plural = 'comparisons'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'product'],
+                name='unique_user_product_comparison'
+            ),
+            models.UniqueConstraint(
+                fields=['session_key', 'product'],
+                condition=models.Q(user__isnull=True),
+                name='unique_session_product_comparison'
+            )
+        ]
+
+    def __str__(self):
+        return f"Comparison: {self.product.name} ({self.user or self.session_key})"

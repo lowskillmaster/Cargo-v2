@@ -7,39 +7,53 @@ from .forms import UserLoginForm, UserRegistrationForm, \
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
 from orders.models import Order, OrderItem
-
+from cart.cart import Cart
+from cart.models import CartItem
 
 def login(request):
-	if request.method == 'POST':
-		form = UserLoginForm(data=request.POST)
-		if form.is_valid():
-			username = request.POST['username']
-			password = request.POST['password']
-			user = auth.authenticate(username=username,
-			                         password=password)
-			if user:
-				auth.login(request, user)
-				return HttpResponseRedirect(reverse('main:product_list'))
-	else:
-		form = UserLoginForm()
-	return render(request, 'users/login.html', {'form': form})
-
+    if request.method == 'POST':
+        form = UserLoginForm(data=request.POST)
+        if form.is_valid():
+            username = request.POST['username']
+            password = request.POST['password']
+            user = auth.authenticate(username=username, password=password)
+            if user:
+                auth.login(request, user)
+                # Перенос корзины из сессии в профиль
+                cart = Cart(request)
+                session_key = request.session.session_key
+                # Получаем элементы корзины из сессии
+                anonymous_cart_items = cart.get_items()
+                for item in anonymous_cart_items:
+                    # Добавляем каждый элемент в корзину пользователя
+                    cart.add(
+                        product=item.product,
+                        quantity=item.quantity,
+                        override_quantity=True
+                    )
+                # Очищаем корзину сессии
+                CartItem.objects.filter(session_key=session_key).delete()
+                return HttpResponseRedirect(reverse('main:product_list'))
+    else:
+        form = UserLoginForm()
+    return render(request, 'users/login.html', {'form': form})
 
 def registration(request):
-    if request.method == 'POST':
-        form = UserRegistrationForm(data=request.POST)
-        if form.is_valid():
-            form.save()
-            user = form.instance
-            auth.login(request, user)
-            messages.success(request, f'{user.username}, Successful Registration')
-            return HttpResponseRedirect(reverse('user:login'))
-        else:
-            print(form.errors)  # Вывод ошибок в консоль для отладки
-            messages.error(request, 'Registration failed. Please check the form.')
-    else:
-        form = UserRegistrationForm()
-    return render(request, 'users/registration.html', {'form': form})
+	if request.method == 'POST':
+		form = UserRegistrationForm(data=request.POST)
+		if form.is_valid():
+			form.save()
+			user = form.instance
+			auth.login(request, user)
+			messages.success(request, f'{user.username}, Successful Registration')
+			return HttpResponseRedirect(reverse('user:login'))
+		else:
+			print(form.errors)  # Вывод ошибок в консоль для отладки
+			messages.error(request, 'Registration failed. Please check the form.')
+	else:
+		form = UserRegistrationForm()
+	return render(request, 'users/registration.html', {'form': form})
+
 
 @login_required
 def profile(request):

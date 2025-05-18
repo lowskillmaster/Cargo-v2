@@ -1,66 +1,38 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}Cart{% endblock title %}
+{% load static cart_filters %}
+{% block title %}Cart{% endblock %}
+
 {% block content %}
-    <section class="cart flex-column">
-        <div class="cart-title">
-            <h2>Shopping Cart</h2>
-        </div>
-
-        <!-- Контейнер для всех товаров -->
-        <div class="cart-cards d-flex flex-column gap-3">
-            {% for item in cart %}
-                {% with product=item.product %}
-                    <div class="cart-card d-flex align-items-center p-3 bg-white border rounded shadow-sm">
-                        <!-- Изображение -->
-                        <div class="cart-card-img me-3">
-                            <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'img/noimage.jpg' %}{% endif %}"
-                                 alt="{{ product.name }}"
-                                 class="rounded" style="width: 120px; height: auto;">
-                        </div>
-
-                        <!-- Информация о товаре -->
-                        <div class="cart-card-info flex-grow-1">
-                            <h5 class="mb-1">{{ product.name }}</h5>
-                            <p class="mb-0">Quantity: {{ item.quantity }}</p>
-                        </div>
-
-
-
-                        <!-- Цена -->
-                        <div class="cart-card-price ms-3 text-end">
-                            {% if product.discount %}
-                                <div class="d-flex flex-column">
-                                    <span class="text-muted text-decoration-line-through">{{ product.price }} ₽</span>
-                                    <strong>{{ product.sell_price }} ₽</strong>
-                                </div>
-                            {% else %}
-                                <strong>{{ product.price }} ₽</strong>
-                            {% endif %}
-                        </div>
-                        <!-- Кнопка удаления -->
-                        <form action="{% url "cart:cart_remove" product.id %}" method="post">
-                            {% csrf_token %}
-                            <input type="submit" value="Remove" class="btn btn-outline-danger btn-sm">
-                        </form>
-                    </div>
-                {% endwith %}
-            {% endfor %}
-        </div>
-
-        <!-- Общая сумма -->
-        <div class="total mt-4">
-            <h5>Total sum: {{ cart.get_total_price }} ₽</h5>
-        </div>
-
-        <!-- Кнопки -->
-        <div class="cart-button d-flex gap-3 mt-3">
-            <a href="/shop" class="btn btn-outline-secondary">Continue Shopping</a>
-            {% with cart_quantity=cart|length %}
-                {% if cart_quantity > 0 %}
-                    <a href="{% url "orders:order_create" %}" class="btn btn-primary">Checkout</a>
-                {% endif %}
-            {% endwith %}
-        </div>
-    </section>
+<div class="container">
+    <h2>Избранное</h2>
+    {% if cart_items %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Цена</th>
+                    <th>Общая сумма</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.product.price }} ₽</td>
+                        <td>{{ item.quantity|floatformat:2|multiply:item.product.price }} ₽</td>
+                        <td>
+                            <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Избранное пусто.</p>
+    {% endif %}
+</div>
 {% endblock %}
