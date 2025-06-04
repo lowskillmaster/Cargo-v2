@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, CategorySpecification, ProductSpecification, ProductImage
+from .models import Category, Product, CategorySpecification, ProductSpecification, ProductImage, Review
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -44,3 +44,21 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
     search_fields = ['product__name', 'specification__name', 'value']
     list_select_related = ['product', 'specification', 'specification__category']
 
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['product', 'user', 'rating', 'is_approved', 'created_at', 'updated_at']
+    list_filter = ['is_approved', 'rating', 'created_at', 'product__category']
+    search_fields = ['product__name', 'user__username', 'comment']
+    list_editable = ['is_approved']
+    actions = ['approve_reviews', 'disapprove_reviews']
+    date_hierarchy = 'created_at'
+
+    def approve_reviews(self, request, queryset):
+        queryset.update(is_approved=True)
+        self.message_user(request, "Выбранные отзывы одобрены.")
+    approve_reviews.short_description = "Одобрить выбранные отзывы"
+
+    def disapprove_reviews(self, request, queryset):
+        queryset.update(is_approved=False)
+        self.message_user(request, "Выбранные отзывы отклонены.")
+    disapprove_reviews.short_description = "Отклонить выбранные отзывы"

@@ -146,7 +146,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
+PARSED_IMAGES_ROOT = BASE_DIR / 'images'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'main/static'] # Ошибка здесь
+STATIC_ROOT = BASE_DIR / 'static'
 CART_SESSION_ID = 'cart'
-
 AUTH_USER_MODEL = 'users.User'

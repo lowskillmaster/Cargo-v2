@@ -21,3 +21,12 @@ def split_query(query_dict, key=None):
         return query_dict.getlist(key)
     # Handle product_name or other multi-select fields
     return query_dict.getlist('product_name') if 'product_name' in query_dict else []
+
+@register.filter
+def add_unit(value, spec_name):
+    if 'память' in spec_name.lower():
+        return f"{value} ГБ"
+    return value
+
+
+

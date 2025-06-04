@@ -9,7 +9,7 @@
         <div class="sidebar-of-category">
             <h3>Категории</h3>
             <ul>
-                <li {% if not category %} class="selected"{% endif %}> 
+                <li {% if not category %} class="selected"{% endif %}>
                     <a href="{% url 'main:product_list' %}">Все товары</a>
                 </li>
                 {% for c in categories %}
@@ -20,7 +20,6 @@
             </ul>
 
             <!-- Filter Form -->
-        
             {% if category %}
                 <h3>Фильтры</h3>
                 <form method="GET" action="{{ category.get_absolute_url }}" class="filter-form">
@@ -28,49 +27,54 @@
                     <div class="filter-group">
                         <h4>Цена</h4>
                         <label>
-                            <input type="number" name="price_min" placeholder="Мин" value="{{ request.GET.price_min }}" class="form-control" step="0.01" min="0">
+                            <input type="number" name="price_min" placeholder="Мин" value="{{ request.GET.price_min }}" class="form-control" step="0.01" min="0" aria-label="Минимальная цена">
                         </label>
                         <label>
-                            <input type="number" name="price_max" placeholder="Макс" value="{{ request.GET.price_max }}" class="form-control" step="0.01" min="0">
+                            <input type="number" name="price_max" placeholder="Макс" value="{{ request.GET.price_max }}" class="form-control" step="0.01" min="0" aria-label="Максимальная цена">
                         </label>
                     </div>
 
-                    <!-- Product Name Filter (Checkboxes) -->
+                    <!-- Product Name Filter (Checkboxes) with Scrollbar -->
                     <div class="filter-group">
                         <h4>Модели</h4>
-                        {% for product in all_products %}
-                            <div class="form-check">
-                                <input type="checkbox" name="product_name" value="{{ product.name }}" class="form-check-input" id="product_{{ product.id }}"
-                                    {% if product.name in request.GET.product_name|split_query %}checked{% endif %}>
-                                <label class="form-check-label" for="product_{{ product.id }}">{{ product.name }}</label>
-                            </div>
-                        {% endfor %}
+                        <div class="scrollable-filter">
+                            {% for product in all_products %}
+                                <div class="form-check">
+                                    <input type="checkbox" name="product_name" value="{{ product.name }}" class="form-check-input" id="product_{{ product.id }}"
+                                        {% if product.name in request.GET.product_name|split_query %}checked{% endif %}>
+                                    <label class="form-check-label" for="product_{{ product.id }}">{{ product.name }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
 
-                    <!-- Specification Filters -->
+                    <!-- Specification Filters with Individual Scrollbars -->
                     {% for spec in specifications %}
                         <div class="filter-group">
                             <h4>{{ spec.name }}</h4>
-                            {% if spec.data_type == 'boolean' %}
-                                <label>
-                                    <select name="spec_{{ spec.id }}" class="form-control">
-                                        <option value="">Все</option>
-                                        <option value="true" {% if request.GET|get_item:'spec_'|add:spec.id == 'true' %}selected{% endif %}>Да</option>
-                                        <option value="false" {% if request.GET|get_item:'spec_'|add:spec.id == 'false' %}selected{% endif %}>Нет</option>
-                                    </select>
-                                </label>
-                            {% else %}
-                                <!-- Text specifications as checkboxes (including RAM/ROM) -->
-                                {% for value in spec_values|get_item:spec.id %}
-                                    <div class="form-check">
-                                        <input type="checkbox" name="spec_{{ spec.id }}" value="{{ value }}" class="form-check-input" id="spec_{{ spec.id }}_{{ forloop.counter }}"
-                                            {% if value in request.GET|split_query:'spec_'|add:spec.id %}checked{% endif %}>
-                                        <label class="form-check-label" for="spec_{{ spec.id }}_{{ forloop.counter }}">{{ value }}{% if  'память' in spec.name %} ГБ{% endif %}</label>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
+                            <div class="scrollable-filter">
+                                {% if spec.data_type == 'boolean' %}
+                                    <label>
+                                        <select name="spec_{{ spec.id }}" class="form-control">
+                                            <option value="">Все</option>
+                                            <option value="true" {% if request.GET|get_item:'spec_'|add:spec.id == 'true' %}selected{% endif %}>Да</option>
+                                            <option value="false" {% if request.GET|get_item:'spec_'|add:spec.id == 'false' %}selected{% endif %}>Нет</option>
+                                        </select>
+                                    </label>
+                                {% else %}
+                                    <!-- Text specifications as checkboxes (including RAM/ROM) -->
+                                    {% for value in spec_values|get_item:spec.id %}
+                                        <div class="form-check">
+                                            <input type="checkbox" name="spec_{{ spec.id }}" value="{{ value }}" class="form-check-input" id="spec_{{ spec.id }}_{{ forloop.counter }}"
+                                                {% if value in request.GET|split_query:'spec_'|add:spec.id %}checked{% endif %}>
+                                            <label class="form-check-label" for="spec_{{ spec.id }}_{{ forloop.counter }}">{{ value|add_unit:spec.name }}</label>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
                         </div>
                     {% endfor %}
+
                     <button type="submit" class="btn btn-primary">Применить</button>
                     <a href="{{ category.get_absolute_url }}" class="btn-reset btn-secondary">Сбросить</a>
                 </form>
@@ -83,23 +87,28 @@
             <div class="product-list">
                 <div class="items">
                     {% for product in products %}
-                        <div class="item d-flex">
+                        <div class="item d-flex align-items-start">
                             <a href="{{ product.get_absolute_url }}" class="home-card d-flex flex-column align-items-center text-center">
-                                <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'img/noimage.jpg' %}{% endif %}" class="card-img" alt="">
+                                <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'img/noimage.jpg' %}{% endif %}" class="card-img" alt="{{ product.name }}" loading="lazy">
                                 <h5 class="title-catd">{{ product.name }}</h5>
-                                {% if product.discount %}
-                                    <div class="cart-discount d-flex gap-2">
-                                        <p class="line"> {{ product.price }}</p>
-                                        <p>{{ product.sell_price }}</p>
-                                    </div>
-                                {% else %}
-                                    <p class="price"> {{ product.price }}</p>
-                                {% endif %} 
+                                
                             </a>
-                            <div class="item-description">
-                                <h5>Описание: {{ product.description }}</h5>
+                            <p class="description">{{ product.description }}</p>
+                            <div class="item-marketplaces ms-3">
+                                <h5>Цена: от {{ product.sell_price }} ₽</h5>
+                                {% for marketplace, data in product.marketplace_data.items %}
+                                    <div class="marketplace-info d-flex align-items-center mb-2">
+                                        <a href="{{ data.url }}" target="_blank">
+                                            <img src="{% static 'img/'|add:marketplace|add:'.svg' %}" alt="{{ marketplace }}" class="marketplace-logo" style="width: 50px; height: auto;">
+                                        </a>
+                                        <div class="ms-2">
+                                            <p>Цена: {{ data.price }} ₽</p>
+                                            <p>Рейтинг: {{ data.rating }}</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
                                 <a href="{% url 'main:add_to_comparison' product.id %}" class="btn btn-outline-primary btn-sm mt-2">
-                                <i class="bi bi-table"></i> В сравнение
+                                    <i class="bi bi-table"></i> В сравнение
                                 </a>
                             </div>
                         </div>
@@ -129,28 +138,105 @@
         </div>
     </div>
     <style>
+        .llist {
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar-of-category {
+            width: 300px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
         .filter-form {
             margin-top: 20px;
         }
         .filter-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .filter-group h4 {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            color: #333;
         }
         .form-control {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             width: 100%;
+            padding: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
         }
         .btn {
             margin-right: 10px;
+            padding: 8px 16px;
         }
         .form-check {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            padding-left: 25px;
         }
         .form-check-label {
-            margin-left: 5px;
+            margin-left: 8px;
+            font-size: 1rem;
+            color: #444;
+        }
+        .scrollable-filter {
+            max-height: 400px;
+            width: 100%;
+            overflow-y: auto;
+            padding-right: 12px;
+            padding-left: 5px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .scrollable-filter::-webkit-scrollbar {
+            width: 10px;
+        }
+        .scrollable-filter::-webkit-scrollbar-track {
+            background: #e8ecef;
+            border-radius: 5px;
+        }
+        .scrollable-filter::-webkit-scrollbar-thumb {
+            background: #666;
+            border-radius: 5px;
+        }
+        .scrollable-filter::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+        .scrollable-filter {
+            scrollbar-width: thin;
+            scrollbar-color: #666 #e8ecef;
+        }
+        .item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .home-card {
+            flex: 1;
+            max-width: 300px;
+            text-align: center;
+        }
+        .card-img {
+            max-width: 100%;
+            height: auto;
+        }
+        .description {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 10px;
+        }
+        .item-marketplaces {
+            flex: 1;
+            max-width: 300px;
+        }
+        .marketplace-info {
+            display: flex;
+            align-items: center;
+        }
+        .marketplace-logo {
+            width: 50px;
+            height: auto;
+            margin-right: 10px;
         }
     </style>
 
@@ -180,20 +266,19 @@
         window.addEventListener("scroll", checkScroll);
         checkScroll();
 
-        // Prevent empty number inputs and checkboxes from being submitted
         const form = document.querySelector('.filter-form');
         form.addEventListener('submit', function (event) {
             const numberInputs = form.querySelectorAll('input[type="number"]');
             numberInputs.forEach(input => {
                 if (input.value === '') {
-                    input.disabled = true; // Disable empty inputs
+                    input.disabled = true;
                 }
             });
 
             const checkboxes = form.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
                 if (!checkbox.checked || !checkbox.value) {
-                    checkbox.disabled = true; // Disable unchecked or empty checkboxes
+                    checkbox.disabled = true;
                 }
             });
         });

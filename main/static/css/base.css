@@ -1418,8 +1418,8 @@ z
 }
 .detail-image {
     margin-top: 30px;
-    width: 500px;
-    height: 500px;
+    width: 400px;
+    height: 400px;
     object-fit: contain;
 }
 
@@ -1685,4 +1685,49 @@ z
     display: inline-flex;
     align-items: center;
     gap: 5px;
+}
+
+.card-img-top {
+    height: 200px; /* Keep the fixed height for consistency */
+    width: 100%; /* Ensure the image takes the full width of the card */
+    object-fit: contain; /* Display the entire image without cropping */
+    object-position: center; /* Center the image within the container */
+    background-color: #f8f9fa; /* Optional: Add a background color for empty space */
+}
+.card-img-top {
+    height: 200px; /* Keep the fixed height for consistency */
+    width: 100%; /* Ensure the image takes the full width of the card */
+    object-fit: contain; /* Display the entire image without cropping */
+    object-position: center; /* Center the image within the container */
+    background-color: #f8f9fa; /* Optional: Add a background color for empty space */
+}
+.card {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px; /* Adjust as needed */
+}
+.card-body {
+    flex-grow: 1; /* Makes card body expand to fill available space */
+}
+
+.card-title a:hover {
+    text-decoration: underline;
+    color: #007bff; /* Bootstrap primary color */
+}
+
+.reviews {
+    margin-top: 2rem;
+}
+.review {
+    background-color: #f8f9fa;
+}
+.review small {
+    color: #6c757d;
+}
+.bi-star, .bi-star-fill {
+    color: #ffc107;
+    font-size: 1.2rem;
+}
+.pagination {
+    margin-top: 1.5rem;
 }

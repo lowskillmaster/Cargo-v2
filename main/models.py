@@ -2,7 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.conf import settings
-
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import JSONField  # Updated import
 
 # Категория товаров
 class Category(models.Model):
@@ -21,7 +22,6 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-
 # Характеристики, специфичные для категории
 class CategorySpecification(models.Model):
     category = models.ForeignKey(
@@ -29,7 +29,7 @@ class CategorySpecification(models.Model):
         related_name='specifications',
         on_delete=models.CASCADE
     )
-    name = models.CharField(max_length=100)  # Например, "Объем памяти"
+    name = models.CharField(max_length=100)
     data_type = models.CharField(
         max_length=20,
         choices=[
@@ -56,15 +56,13 @@ class CategorySpecification(models.Model):
         return f"{self.name} ({self.category.name})"
 
     def clean(self):
-        # Проверка, чтобы убедиться, что имя характеристики уникально в пределах категории
         if CategorySpecification.objects.filter(
                 category=self.category,
                 name=self.name
         ).exclude(pk=self.pk).exists():
             raise ValidationError(f"Характеристика '{self.name}' уже существует в категории '{self.category.name}'.")
 
-
-# Товар  
+# Товар
 class Product(models.Model):
     category = models.ForeignKey(
         Category,
@@ -81,6 +79,8 @@ class Product(models.Model):
     updated = models.DateTimeField(auto_now=True)
     discount = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
     brand = models.CharField(max_length=100)
+    marketplace_data = JSONField(default=dict, blank=True)  # Updated to django.db.models.JSONField
+
     class Meta:
         ordering = ['name']
         indexes = [
@@ -103,10 +103,8 @@ class Product(models.Model):
         return self.price
 
     def clean(self):
-        # Проверка, что discount находится в разумных пределах (0-100%)
         if self.discount < 0 or self.discount > 100:
             raise ValidationError("Discount must be between 0 and 100.")
-
 
 # Значение характеристики для конкретного товара
 class ProductSpecification(models.Model):
@@ -135,12 +133,10 @@ class ProductSpecification(models.Model):
         return f"{self.specification.name}: {self.value} ({self.product.name})"
 
     def clean(self):
-        # Проверка соответствия категории товара и характеристики
         if self.specification.category != self.product.category:
             raise ValidationError(
                 f"Характеристика '{self.specification.name}' не относится к категории '{self.product.category.name}'."
             )
-        # Валидация значения в зависимости от типа данных
         if self.specification.data_type == 'number':
             try:
                 float(self.value)
@@ -150,16 +146,13 @@ class ProductSpecification(models.Model):
             if self.value.lower() not in ['true', 'false', 'yes', 'no', '1', '0']:
                 raise ValidationError(f"Значение '{self.value}' должно быть булевым (true/false, yes/no, 1/0).")
 
-
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images',
-                                on_delete=models.CASCADE)
+                               on_delete=models.CASCADE)
     image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
 
     def __str__(self):
         return f'{self.product.name} - {self.image.name}'
-
-
 
 class Comparison(models.Model):
     user = models.ForeignKey(
@@ -202,3 +195,38 @@ class Comparison(models.Model):
 
     def __str__(self):
         return f"Comparison: {self.product.name} ({self.user or self.session_key})"
+
+class Review(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name='reviews',
+        on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='reviews'
+    )
+    rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_approved = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'review'
+        verbose_name_plural = 'reviews'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'product'],
+                name='unique_user_product_review'
+            )
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Review for {self.product.name} by {self.user} ({self.rating})"

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<!-- Популярные товары -->
+<section class="popular-products my-5">
+    <h2 class="mb-4">Популярные товары</h2>
+    <div class="row">
+        {% for product in popular_products %}
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if product.images.exists %}
+                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                {% else %}
+                    <img src="{% static 'img/noimage.jpg' %}" class="card-img-top" alt="No image">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {% if product.category.slug == 'smartphones' %}
+                            <a href="{% url 'cart:cart_detail' %}" class="text-decoration-none text-dark">{{ product.name }}</a>
+                        {% else %}
+                            {{ product.name }}
+                        {% endif %}
+                    </h5>
+                    <p class="card-text">Цена: 
+                        {% if product.discount > 0 %}
+                            <span class="text-danger">{{ product.get_discounted_price }} ₽</span>
+                            <small class="text-muted"><s>{{ product.price }} ₽</s></small>
+                        {% else %}
+                            {{ product.price }} ₽
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'main:product_detail' product.slug %}" class="btn btn-primary">Подробнее</a>
+                    <a href="{% url 'main:add_to_comparison' product.id %}" class="btn btn-outline-secondary btn-comparison">
+                        <i class="bi bi-table"> Сравнить</i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>Нет популярных товаров.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Товары по категориям -->
+{% for category, products in products_by_category.items %}
+<section class="category-products my-5">
+    <h2 class="mb-4">{{ category.name }}</h2>
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if product.images.exists %}
+                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                {% else %}
+                    <img src="{% static 'img/noimage.jpg' %}" class="card-img-top" alt="No image">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {% if category.slug == 'smartphones' %}
+                            <a href="{% url 'cart:cart_detail' %}" class="text-decoration-none text-dark">{{ product.name }}</a>
+                        {% else %}
+                            {{ product.name }}
+                        {% endif %}
+                    </h5>
+                    <p class="card-text">Цена: 
+                        {% if product.discount > 0 %}
+                            <span class="text-danger">{{ product.get_discounted_price }} ₽</span>
+                            <small class="text-muted"><s>{{ product.price }} ₽</s></small>
+                        {% else %}
+                            {{ product.price }} ₽
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'main:product_detail' product.slug %}" class="btn btn-primary">Подробнее</a>
+                    <a href="{% url 'main:add_to_comparison' product.id %}" class="btn btn-outline-secondary btn-comparison">
+                        <i class="bi bi-table"> Сравнить</i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <a href="{% url 'main:product_list_by_category' category_slug=category.slug %}" class="btn btn-outline-primary mt-3">Все товары в категории {{ category.name }}</a>
+</section>
+{% empty %}
+<p>Нет товаров в категориях.</p>
+{% endfor %}
+{% endblock %}
