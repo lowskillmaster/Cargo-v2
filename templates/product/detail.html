@@ -6,55 +6,41 @@
 
 {% block content %}
     <div class="detail-product d-flex gap-5">
-        <div class="detail-img d-flex align-items-center">
-            {% for image in product.images.all %}
-                <img class="detail-image" src="{{ image.image.url }}" alt="" style="display: none;" data-index="{{ forloop.counter0 }}">
-            {% endfor %}
-            <button class="prev-btn">‹</button>
-            <button class="next-btn">›</button>
+        <!-- Изображения (слайдер) -->
+        <div class="detail-img d-flex align-items-center justify-content-center position-relative">
+            <div class="image-container">
+                {% if product.images.all %}
+                    {% for image in product.images.all %}
+                        <img class="detail-image" src="{{ image.image.url }}" alt="{{ product.name }}" style="display: none;" data-index="{{ forloop.counter0 }}">
+                    {% endfor %}
+                    <button class="prev-btn">‹</button>
+                    <button class="next-btn">›</button>
+                {% else %}
+                    <img class="detail-image" src="{% static 'img/noimage.jpg' %}" alt="Нет изображения" style="display: block;" data-index="0">
+                {% endif %}
+            </div>
         </div>
-        <script>
-            const images = document.querySelectorAll('.detail-image');
-            const prevBtn = document.querySelector('.prev-btn');
-            const nextBtn = document.querySelector('.next-btn');
-            let currentIndex = 0;
-
-            images[currentIndex].style.display = 'block';
-
-            if (images.length === 1) {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
-            } else {
-                prevBtn.addEventListener('click', () => {
-                    images[currentIndex].style.display = 'none';
-                    currentIndex = (currentIndex - 1 + images.length) % images.length;
-                    images[currentIndex].style.display = 'block';
-                });
-
-                nextBtn.addEventListener('click', () => {
-                    images[currentIndex].style.display = 'none';
-                    currentIndex = (currentIndex + 1) % images.length;
-                    images[currentIndex].style.display = 'block';
-                });
-            }
-        </script>
-        <div class="detail-description">
+        <!-- Информация о товаре -->
+        <div class="detail-info flex-grow-1">
             <h2>{{ product.name }}</h2>
-            <h3>Категория: {{ product.category }}</h3>
-            <p>Средний рейтинг: 
-                {% for i in "12345" %}
-                    <i class="bi bi-star{% if forloop.counter <= product.average_rating|floatformat:0 %}-fill{% endif %}"></i>
-                {% endfor %}
-                ({{ product.reviews.count }} отзывов)
+            <p><strong>Бренд:</strong> {{ product.brand }}</p>
+            <p><strong>Рейтинг:</strong> 
+                {% with avg_rating=product.average_rating %}
+                    {% if avg_rating %}
+                        <i class="bi bi-star-fill"></i> {{ avg_rating|floatformat:1 }} ({{ product.reviews.count }} отзывов)
+                    {% else %}
+                        <i class="bi bi-star"></i> Нет рейтинга (0 отзывов)
+                    {% endif %}
+                {% endwith %}
             </p>
-            <p>Описание: {{ product.description|linebreaks }}</p>
+            <p><strong>Описание:</strong> {{ product.description|linebreaks|default:"Описание отсутствует" }}</p>
             {% if product.discount %}
                 <div class="cart-discount d-flex gap-2">
                     <p class="line">{{ product.price }}</p>
-                    <p>{{ product.sell_price }}</p>
+                    <p>Цены от {{ product.sell_price }} ₽</p>
                 </div>
             {% else %}
-                <p class="price">{{ product.price }}</p>
+                <p class="price"><strong>Цены от</strong> {{ product.price }} ₽</p>
             {% endif %}
             <form action="{% url 'cart:cart_add' product.id %}" class="qform" method="post">
                 <div class="cart-form">
@@ -64,8 +50,19 @@
                 <input type="submit" class="add-to-cart-btn" value="Добавить в избранное">
             </form>
         </div>
+        <!-- Маркетплейсы -->
+        <div class="product-marketplaces">
+            {% for marketplace, data in product.marketplace_data.items %}
+                <div class="marketplace-item mb-2">
+                    <img src="{% static 'img/'|add:marketplace|add:'.svg' %}" alt="{{ marketplace|capfirst }}" class="marketplace-logo">
+                    <p class="marketplace-price"><i class="bi bi-star-fill"></i> {{ data.rating }} {{ data.price }} ₽</p>
+                    <a href="{{ data.url }}" class="btn btn-primary btn-sm marketplace-btn">Купить</a>
+                </div>
+            {% endfor %}
+        </div>
     </div>
-    <div class="specifications">
+    <!-- Характеристики -->
+    <div class="specifications mt-4">
         <h4>Характеристики:</h4>
         {% if product.specifications.exists %}
             <table class="table table-bordered">
@@ -82,13 +79,13 @@
             <p>Характеристики отсутствуют.</p>
         {% endif %}
     </div>
+    <!-- Сравнение -->
     <div class="mt-3">
         <a href="{% url 'main:add_to_comparison' product.id %}" class="btn btn-outline-primary">
             <i class="bi bi-table"></i> Добавить в сравнение
         </a>
     </div>
-
-    <!-- Секция отзывов -->
+    <!-- Отзывы -->
     <div class="reviews mt-5">
         <h4>Отзывы:</h4>
         {% if reviews %}
@@ -174,9 +171,8 @@
                 </nav>
             {% endif %}
         {% else %}
-            <p>Отзывов пока нет. Будьте первым!</p>
+            <p>Отзывов пока нет.</p>
         {% endif %}
-
         <!-- Форма добавления отзыва -->
         {% if request.user.is_authenticated %}
             <h5 class="mt-4">Оставить отзыв</h5>
@@ -184,10 +180,74 @@
                 {% csrf_token %}
                 <input type="hidden" name="review_form" value="true">
                 {{ review_form.as_p }}
-                <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+                <button type="submit" class="btn btn-primary">Отправить</button>
             </form>
         {% else %}
             <p class="mt-4">Пожалуйста, <a href="{% url 'user:login' %}">войдите</a>, чтобы оставить отзыв.</p>
         {% endif %}
     </div>
+    <style>
+        .detail-img {
+            max-width: 360px; /* Increased to accommodate larger images and buttons */
+            position: relative;
+            margin-right: 20px; /* Maintain gap to description */
+        }
+        .image-container {
+            width: 330px; /* Increased from 280px */
+            height: 330px; /* Increased from 280px */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .detail-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Maintain aspect ratio without cropping */
+            object-position: center;
+        }
+        .prev-btn, .next-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            z-index: 10;
+        }
+        .prev-btn {
+            left: -40px; /* Button remains outside the image */
+        }
+        .next-btn {
+            right: -40px; /* Button remains outside the image */
+        }
+    </style>
+    <script>
+        const images = document.querySelectorAll('.detail-image');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        let currentIndex = 0;
+
+        if (images.length > 0) {
+            images[currentIndex].style.display = 'block';
+            if (images.length === 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            } else {
+                prevBtn.addEventListener('click', () => {
+                    images[currentIndex].style.display = 'none';
+                    currentIndex = (currentIndex - 1 + images.length) % images.length;
+                    images[currentIndex].style.display = 'block';
+                });
+                nextBtn.addEventListener('click', () => {
+                    images[currentIndex].style.display = 'none';
+                    currentIndex = (currentIndex + 1) % images.length;
+                    images[currentIndex].style.display = 'block';
+                });
+            }
+        }
+    </script>
 {% endblock content %}

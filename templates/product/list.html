@@ -88,22 +88,35 @@
                 <div class="items">
                     {% for product in products %}
                         <div class="item d-flex align-items-start">
-                            <a href="{{ product.get_absolute_url }}" class="home-card d-flex flex-column align-items-center text-center">
+                            <!-- Image Section -->
+                            <a href="{{ product.get_absolute_url }}" class="home-card">
                                 <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'img/noimage.jpg' %}{% endif %}" class="card-img" alt="{{ product.name }}" loading="lazy">
-                                <h5 class="title-catd">{{ product.name }}</h5>
-                                
                             </a>
-                            <p class="description">{{ product.description }}</p>
+                            <!-- Name and Description Section -->
+                            <div class="product-details ms-3">
+                                <h5 class="title-card">{{ product.name }}</h5>
+                                <p class="description">{{ product.description }}</p>
+                                <p class="rating">
+                                    <strong>Рейтинг</strong>
+                                    {% with avg_rating=product.average_rating %}
+                                        {% if avg_rating %}
+                                            <i class="bi bi-star-fill"></i> {{ avg_rating|floatformat:1 }} ({{ product.reviews.count }} отзывов)
+                                        {% else %}
+                                            <i class="bi bi-star"></i> Нет рейтинга (0 отзывов)
+                                        {% endif %}
+                                    {% endwith %}
+                                </p>
+                            </div>
+                            <!-- Price and Marketplace Section -->
                             <div class="item-marketplaces ms-3">
                                 <h5>Цена: от {{ product.sell_price }} ₽</h5>
                                 {% for marketplace, data in product.marketplace_data.items %}
                                     <div class="marketplace-info d-flex align-items-center mb-2">
                                         <a href="{{ data.url }}" target="_blank">
-                                            <img src="{% static 'img/'|add:marketplace|add:'.svg' %}" alt="{{ marketplace }}" class="marketplace-logo" style="width: 50px; height: auto;">
+                                            <img src="{% static 'img/'|add:marketplace|add:'.svg' %}" alt="{{ marketplace }}" class="marketplace-logo" style="width: 150px; height: auto;">
                                         </a>
                                         <div class="ms-2">
-                                            <p>Цена: {{ data.price }} ₽</p>
-                                            <p>Рейтинг: {{ data.rating }}</p>
+                                            <p><i class="bi bi-star-fill"></i> {{ data.rating }} {{ data.price }} ₽</p>
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -112,6 +125,8 @@
                                 </a>
                             </div>
                         </div>
+                        <!-- Horizontal Line Separator -->
+                        <hr class="product-divider">
                     {% endfor %}
                     {% if not products %}
                         <p>Нет продуктов, соответствующих выбранным фильтрам.</p>
@@ -210,24 +225,37 @@
             display: flex;
             align-items: flex-start;
             margin-bottom: 20px;
+            position: relative;
         }
         .home-card {
-            flex: 1;
-            max-width: 300px;
-            text-align: center;
+            flex: 0 0 auto;
+            max-width: 200px; /* Adjusted for better spacing */
         }
         .card-img {
             max-width: 100%;
             height: auto;
         }
+        .product-details {
+            flex: 1;
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        .title-card {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
         .description {
             font-size: 0.9rem;
             color: #555;
-            margin-top: 10px;
+            margin-bottom: 10px;
         }
         .item-marketplaces {
-            flex: 1;
+            flex: 0 0 auto;
             max-width: 300px;
+            margin-left: 20px;
         }
         .marketplace-info {
             display: flex;
@@ -237,6 +265,12 @@
             width: 50px;
             height: auto;
             margin-right: 10px;
+        }
+        .product-divider {
+            border: 0;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
+            width: 100%;
         }
     </style>
 

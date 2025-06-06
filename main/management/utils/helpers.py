@@ -10,11 +10,10 @@ def extract_brand_and_name(product_name):
     Извлекает бренд и название из строки.
     Возвращает кортеж: (brand, name)
     """
-    brands = ['TECNO', 'Samsung', 'Apple', 'Xiaomi', 'Huawei', 'Oppo', 'Realme']
-    for brand in brands:
-        if product_name.lower().startswith(brand.lower()):
-            return brand, product_name[len(brand):].strip()
-    return 'Unknown', product_name
+
+    brands = product_name.split()[1]
+
+    return brands, product_name
 
 def generate_slug(name):
     """

@@ -24,7 +24,7 @@ def add_products_from_parsed_data(products_data, category_name):
 			description = generate_description(parsed_specs)
 
 			# Вычисляем минимальную цену
-			prices = [data['цена'] for data in marketplace_data.values() if 'цена' in data]
+			prices = [data['price'] for data in marketplace_data.values() if 'price' in data]
 			if not prices:
 				logger.warning(f'Не найдены цены для {full_name}')
 				price = 0.00

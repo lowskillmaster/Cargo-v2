@@ -11,16 +11,14 @@
                 <tr>
                     <th>Товар</th>
                     <th>Цена</th>
-                    <th>Общая сумма</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in cart_items %}
                     <tr>
-                        <td>{{ item.product.name }}</td>
-                        <td>{{ item.product.price }} ₽</td>
-                        <td>{{ item.quantity|floatformat:2|multiply:item.product.price }} ₽</td>
+                        <td><a href={{ item.product.get_absolute_url }}>{{ item.product.name }}</a></td>
+                        <td>От {{ item.product.price }} ₽</td>
                         <td>
                             <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
                                 {% csrf_token %}
